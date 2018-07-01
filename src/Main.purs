@@ -120,13 +120,13 @@ tableView state =
       where
 	    makeRow startDay index = 
 		  HH.tr []
-                     [ HH.td [HH.attr (AttrName "width")"15%"] [HH.text (getText index 1 startDay state)] 
-                     , HH.td [HH.attr (AttrName "width")"15%"] [HH.text (getText index 2 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%"] [HH.text (getText index 3 startDay state)]
-		     , HH.td [HH.attr (AttrName "width")"15%"] [HH.text (getText index 4 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%"] [HH.text (getText index 5 startDay state)]
-		     , HH.td [HH.attr (AttrName "width")"15%"] [HH.text (getText index 6 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%"] [HH.text (getText index 7 startDay state)]
+                     [ HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 1 startDay state) )] [HH.text (getText index 1 startDay state)] 
+                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 2 startDay state) )] [HH.text (getText index 2 startDay state)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 3 startDay state) )] [HH.text (getText index 3 startDay state)]
+		     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 4 startDay state) )] [HH.text (getText index 4 startDay state)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 5 startDay state) )] [HH.text (getText index 5 startDay state)]
+		     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 6 startDay state) )] [HH.text (getText index 6 startDay state)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 7 startDay state) )] [HH.text (getText index 7 startDay state)]
 		     ]
 
 getText :: Int -> Int -> Int -> State ->String 
@@ -169,8 +169,8 @@ component = H.component
 			    [ HH.text "Github Calendar" ]
 			 , HH.div [HP.class_ $ ClassName "UnderLine"] 
                             [ HH.p [] [HH.text $ (show state.monthSelected) <> (show state.yearSelected)]
-			    , HH.button [HE.onClick $ HE.input_ Next, HP.class_ $ ClassName "next_button"][HH.text "NEXT"]
-			    , HH.button [HE.onClick $ HE.input_ Prev, HP.class_ $ ClassName "prev_button"] [HH.text "PREV"]
+			    , HH.button [HE.onClick $ HE.input_ Next, HP.class_ $ ClassName "next_button"][HH.text "NEXT>>"]
+			    , HH.button [HE.onClick $ HE.input_ Prev, HP.class_ $ ClassName "prev_button"] [HH.text "<<PREV"]
 			    ]
 		         , HH.div_
 	                    [ HH.div []
