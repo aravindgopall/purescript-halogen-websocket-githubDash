@@ -1,0 +1,21 @@
+{
+  "name": "halogen-example",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": "^2.0.1",
+    "purescript-console": "^3.0.0",
+    "purescript-aff-coroutines": "^6.0.0",
+    "purescript-halogen": "^3.0.1",
+    "purescript-var": "^2.0.0",
+    "purescript-datetime": "3.1.0",
+    "purescript-websocket-simple": "^2.0.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^2.0.0"
+  }
+}
