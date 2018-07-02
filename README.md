@@ -10,11 +10,14 @@ Install purescript@0.11.7, bower and pulp@12.2.0 using npm `(npm i purescript@0.
 
 `bower i` (if any options came select 3)
 
+`npm i`
+
+
 #FrontEnd Setup
 
 1) run `npm start` in terminal
 
-2) open browser and enter /Users/xxxxxxxx/purescript-halogen-websocket-githubDash/dist/index.html
+2) open browser and enter localhost:<portNumber>/dist/
 
 #Front End setup is done
 
