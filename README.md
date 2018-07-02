@@ -2,6 +2,8 @@
 
 # Installation 
 Install purescript@0.11.7, bower and pulp@12.2.0 using npm
+
+#Installation of dependencies
 bower i (if any options came select 3)
 
 #FrontEnd Setup
