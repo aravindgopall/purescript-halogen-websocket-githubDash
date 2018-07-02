@@ -94,6 +94,7 @@ type State =
 	{ monthSelected :: Month 
         , yearSelected :: Int 
         , endDate :: Int
+	, eventData :: Array String
 	}
 
 data Query a = 
@@ -134,10 +135,10 @@ getText index val startDay state = if index == 1 then if startDay == val then (s
 
 
 getPreviousMonth :: Month -> Month
-getPreviousMonth monthSelected = ((toEnumL $ (fromEnum monthSelected -1)):: Month )
+getPreviousMonth monthSelected = if monthSelected == January then December else toEnumL $ fromEnum monthSelected -1
 
 getNextMonth :: Month -> Month 
-getNextMonth monthSelected =((toEnumL $ (fromEnum monthSelected) +1) :: Month)
+getNextMonth monthSelected = if monthSelected == December then January else  toEnumL $ fromEnum monthSelected +1
 
 tableViewDays :: State -> H.ComponentHTML Query
 tableViewDays state = 
@@ -186,7 +187,7 @@ component = H.component
 				 (let newMonth = if st.monthSelected == December then January else getNextMonth st.monthSelected 
 			              newYear = if newMonth == January then st.yearSelected +1 else st.yearSelected
 			              lastDay = fromEnum $ lastDayOfMonth (toEnumL newYear) newMonth
-		                  in {monthSelected : newMonth, yearSelected : newYear, endDate : lastDay}
+		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay}
 				 )
 			      )
 		     pure next
@@ -195,13 +196,13 @@ component = H.component
 				 (let newMonth = if st.monthSelected == January then December else getPreviousMonth st.monthSelected 			              
 				      newYear = if newMonth == December then st.yearSelected -1 else st.yearSelected
 			              lastDay = fromEnum $ lastDayOfMonth (toEnumL newYear) newMonth
-		                  in {monthSelected : newMonth, yearSelected : newYear, endDate : lastDay}
+		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay}
 				 )
 			      )
 		     pure next
 	        eval (WebHook msg next) = do
-	             {-- H.modify ( _ {monthSelected =e msg}) --} 
+		     H.modify ( _ {eventData = [logMe msg]}) 
 		     pure next
     		
 		initialStateData :: State
-  		initialStateData = { monthSelected: January, yearSelected: 2018, endDate:31}
+  		initialStateData = { monthSelected: January, yearSelected: 2018, endDate:31, eventData : []}
