@@ -27,7 +27,7 @@ import Data.Either (Either(..), either)
 import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Foldable (for_)
 import Data.Foreign (F, Foreign, readString, toForeign)
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..), fromJust, fromMaybe)
 import Halogen as H
 import Halogen.Aff as HA
 import Halogen.HTML as HH
@@ -120,19 +120,21 @@ tableView state =
 	 [HH.tbody_ $ map (makeRow (startOfMonth state )) [1,2,3,4,5,6]]
       where
 	    makeRow startDay index = 
-		  HH.tr []
-                     [ HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 1 startDay state) )] [HH.text (getText index 1 startDay state)] 
-                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 2 startDay state) )] [HH.text (getText index 2 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 3 startDay state) )] [HH.text (getText index 3 startDay state)]
-		     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 4 startDay state) )] [HH.text (getText index 4 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 5 startDay state) )] [HH.text (getText index 5 startDay state)]
-		     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 6 startDay state) )] [HH.text (getText index 6 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HP.ref $ H.RefLabel ("DayStage" <> (getText index 7 startDay state) )] [HH.text (getText index 7 startDay state)]
+		  HH.tr [HH.attr (AttrName "height") "50" ]
+                     [ HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 1 startDay state) )]
+		       [ HH.div [HP.class_ $ ClassName "Left_Text"] [HH.text (fromMaybe "" (state.eventData !! 0))]
+		       ,HH.div [HP.class_ $ ClassName "Right_Text"] [ HH.text (getText index 1 startDay state)]
+	               ] 
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 2 startDay state) )] [HH.text (getText index 2 startDay state)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 3 startDay state) )] [HH.text (getText index 3 startDay state)]
+		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 4 startDay state) )] [HH.text (getText index 4 startDay state)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 5 startDay state) )] [HH.text (getText index 5 startDay state)]
+		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 6 startDay state) )] [HH.text (getText index 6 startDay state)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 7 startDay state) )] [HH.text (getText index 7 startDay state)]
 		     ]
 
 getText :: Int -> Int -> Int -> State ->String 
 getText index val startDay state = if index == 1 then if startDay == val then (show state.monthSelected <> show 1) else if startDay <  val then  show (val-startDay +1) else if val == 1 then (show $ getPreviousMonth state.monthSelected) else ""  else if index ==2 && startDay /= 1 then show (8-(startDay-val))  else if startDay >= val then if state.endDate >= (((index-1)*8)-(index-2)-(startDay-val)) then show $ (((index-1)*8)-(index-2)-(startDay-val)) else "" else if state.endDate >= (val-startDay+1 +(index-1)*7) then show $ (val-startDay+1 +(index-1)*7) else ""  
-
 
 getPreviousMonth :: Month -> Month
 getPreviousMonth monthSelected = if monthSelected == January then December else toEnumL $ fromEnum monthSelected -1
