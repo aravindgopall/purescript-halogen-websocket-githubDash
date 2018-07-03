@@ -1,8 +1,10 @@
 module Main where
 
+import Control.Monad.Eff.Now
 import Data.Array
 import Data.Date
 import Data.Date.Component
+import Data.Foreign.Class
 import Prelude
 import WebSocket
 
@@ -10,9 +12,10 @@ import Control.Coroutine (emit)
 import Control.Coroutine as CR
 import Control.Coroutine.Aff (produce)
 import Control.Coroutine.Aff as CRA
-import Control.Monad.Aff (Aff)
+import Control.Monad.Aff (Aff, makeAff, nonCanceler)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Var (($=))
@@ -23,7 +26,8 @@ import DOM.HTML.Indexed (CSSPixel)
 import DOM.Websocket.Event.EventTypes as WSET
 import DOM.Websocket.Event.MessageEvent as ME
 import DOM.Websocket.WebSocket as WS
-import Data.Either (Either(..), either)
+import Data.DateTime.Locale (LocalValue(..), Locale(..))
+import Data.Either (Either(..), either, fromRight)
 import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Foldable (for_)
 import Data.Foreign (F, Foreign, readString, toForeign)
@@ -37,9 +41,10 @@ import Halogen.HTML.Properties as HP
 import Halogen.VDom.Driver (runUI)
 import Partial.Unsafe (unsafePartial)
 import Unsafe.Coerce (unsafeCoerce)
-
 foreign import logMe :: forall a. a -> a
-
+foreign import jsonParse :: String -> Foreign 
+foreign import pushEvent ::forall m. String -> Date ->  Unit
+foreign import getAllEvents :: forall eff. Date -> (Array String -> Eff eff Unit)-> Eff eff Unit
 main :: forall t179.
    Eff
      ( dom :: DOM
@@ -48,6 +53,7 @@ main :: forall t179.
      , exception :: EXCEPTION
      , ref :: REF
      , ws :: WEBSOCKET
+     , now :: NOW
      | t179
      )
      Unit
@@ -59,9 +65,17 @@ main = do
    CR.runProcess (wsProducerS connection CR.$$ wsConsumer io.query)
    pure unit
 
+getNow :: forall e. Aff (now :: NOW | e) Date
+getNow = do
+      (LocalValue _  date) <- liftEff nowDate
+      pure date
+
 wsConsumer :: forall eff. (Query ~> Aff (HA.HalogenEffects eff)) -> CR.Consumer String (Aff (HA.HalogenEffects eff)) Unit
 wsConsumer query = CR.consumer \msg -> do
-        query $ H.action $ WebHook msg 
+        now <- getNow
+        pure $ pushEvent msg now 
+	msgs <- makeAff (\callback -> getAllEvents now  (Right >>> callback) *> pure nonCanceler ) 
+        query $ H.action $ WebHook msgs 
         pure Nothing
 
 wsProducer :: forall eff. WS.WebSocket -> CR.Producer String (Aff (HA.HalogenEffects (dom :: DOM | eff))) Unit
@@ -100,7 +114,7 @@ type State =
 data Query a = 
 	Next a
  	| Prev a
-  	| WebHook String  a
+  	| WebHook (Array String) a
 
 
 toEnumL ::forall a. BoundedEnum a => Int -> a 
@@ -121,20 +135,24 @@ tableView state =
       where
 	    makeRow startDay index = 
 		  HH.tr [HH.attr (AttrName "height") "50" ]
-                     [ HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 1 startDay state) )]
-		       [ HH.div [HP.class_ $ ClassName "Left_Text"] [HH.text (fromMaybe "" (state.eventData !! 0))]
-		       ,HH.div [HP.class_ $ ClassName "Right_Text"] [ HH.text (getText index 1 startDay state)]
+                     [ HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 1 startDay state).value) )]
+		     [ HH.div [HP.class_ $ ClassName "Left_Text"] [HH.text (fromMaybe "" (if index == 1 then state.eventData !! 0 else Just "nope"))]
+		       ,HH.div [HP.class_ $ ClassName "Right_Text"] [ HH.text ((getText index 1 startDay state).value)]
 	               ] 
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 2 startDay state) )] [HH.text (getText index 2 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 3 startDay state) )] [HH.text (getText index 3 startDay state)]
-		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 4 startDay state) )] [HH.text (getText index 4 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 5 startDay state) )] [HH.text (getText index 5 startDay state)]
-		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 6 startDay state) )] [HH.text (getText index 6 startDay state)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> (getText index 7 startDay state) )] [HH.text (getText index 7 startDay state)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 2 startDay state).value) )] [HH.text ((getText index 2 startDay state).value)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 3 startDay state).value) )] [HH.text ((getText index 3 startDay state).value)]
+		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 4 startDay state).value) )] [HH.text ((getText index 4 startDay state).value)]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 5 startDay state).value) )] [HH.text (getText index 5 startDay state).value]
+		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 6 startDay state).value) )] [HH.text (getText index 6 startDay state).value]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 7 startDay state).value) )] [HH.text (getText index 7 startDay state).value]
 		     ]
 
-getText :: Int -> Int -> Int -> State ->String 
-getText index val startDay state = if index == 1 then if startDay == val then (show state.monthSelected <> show 1) else if startDay <  val then  show (val-startDay +1) else if val == 1 then (show $ getPreviousMonth state.monthSelected) else ""  else if index ==2 && startDay /= 1 then show (8-(startDay-val))  else if startDay >= val then if state.endDate >= (((index-1)*8)-(index-2)-(startDay-val)) then show $ (((index-1)*8)-(index-2)-(startDay-val)) else "" else if state.endDate >= (val-startDay+1 +(index-1)*7) then show $ (val-startDay+1 +(index-1)*7) else ""  
+type StrInt = { value :: String
+              , index :: Int
+	      }
+
+getText :: Int -> Int -> Int -> State ->StrInt 
+getText index val startDay state = if index == 1 then if startDay == val then {value: (show state.monthSelected <> show 1),index : 1} else if startDay <  val then {value: show (val-startDay +1),index: (val-startDay+1)} else if val == 1 then {value: (show $ getPreviousMonth state.monthSelected),index:val} else {value:"",index:(-1)} else if index ==2 && startDay /= 1 then {value:show (8-(startDay-val)),index: (8-startDay+val)} else if startDay >= val then if state.endDate >= (((index-1)*8)-(index-2)-(startDay-val)) then {value: show $ (((index-1)*8)-(index-2)-(startDay-val)), index: (((index-1)*8)-(index-2)-(startDay-val))} else {value:"",index:(-1)} else if state.endDate >= (val-startDay+1 +(index-1)*7) then {value: show $ (val-startDay+1 +(index-1)*7), index: (val-startDay+1 + (index-1)*7)} else {value: "",index:(-1)}  
 
 getPreviousMonth :: Month -> Month
 getPreviousMonth monthSelected = if monthSelected == January then December else toEnumL $ fromEnum monthSelected -1
@@ -203,7 +221,7 @@ component = H.component
 			      )
 		     pure next
 	        eval (WebHook msg next) = do
-		     H.modify ( _ {eventData = [logMe msg]}) 
+		     H.modify ( _ {eventData = msg }) 
 		     pure next
     		
 		initialStateData :: State

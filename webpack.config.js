@@ -7,5 +7,8 @@ module.exports = {
                     path: path.join(__dirname, "out"),
                     filename: "webhook.js"
                 },
-        target: "node"
+        target: "node",
+        devServer: {
+                hot: true
+        }
 };
