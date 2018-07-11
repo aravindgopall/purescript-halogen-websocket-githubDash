@@ -9,7 +9,7 @@ import WebSocket
 import Control.Coroutine as CR
 import Control.Coroutine.Aff (produce)
 import Control.Coroutine.Aff as CRA
-import Control.Monad.Aff (Aff, makeAff, nonCanceler)
+import Control.Monad.Aff (Aff, launchAff, launchAff_, makeAff, nonCanceler)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Cont.Trans (lift)
 import Control.Monad.Eff (Eff)
@@ -225,7 +225,6 @@ component = H.component
 			      )
 		     pure next
 	        eval (WebHook msg next) = do
-		     _ <- H.liftAff $ insertDataPS 1995 1 "1"
 		     H.modify ( _ {eventData = msg }) 
 		     pure next
     		

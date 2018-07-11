@@ -5,6 +5,7 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Now (NOW)
 import Control.Monad.Eff.Ref (REF)
 import DOM (DOM)
+import Database.Postgres (DB)
 
 -- | A type alias for the basic row of effects involved in running Halogen with
 -- | `Aff`-based drivers.
@@ -13,6 +14,7 @@ type HalogenEffects eff =
   , ref :: REF
   , exception :: EXCEPTION
   , dom :: DOM
+  , db :: DB
   , now :: NOW
   | eff
   )
