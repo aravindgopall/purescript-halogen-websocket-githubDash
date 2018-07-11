@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "webpack": "webpack-dev-server",
-    "start": "concurrently --kill-others \"pulp --watch build\" \"npm run webpack\""
+    "start": "concurrently --kill-others \"pulp --watch build --to dist/webhook.js\" \"npm run webpack\""
   },
   "author": "",
   "license": "ISC",

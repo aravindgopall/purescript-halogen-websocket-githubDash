@@ -1,7 +1,5 @@
 module Main where
 
-import Control.Monad.Eff.Now (NOW, nowDate)
-import Data.Array ((!!))
 import Data.Date
 import Data.Date.Component
 import Data.Foreign.Class
@@ -16,6 +14,7 @@ import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION)
+import Control.Monad.Eff.Now (NOW, nowDate)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Var (($=))
 import Control.Monad.Except (runExcept)
@@ -24,6 +23,7 @@ import DOM.Event.EventTarget as EET
 import DOM.Websocket.Event.EventTypes as WSET
 import DOM.Websocket.Event.MessageEvent as ME
 import DOM.Websocket.WebSocket as WS
+import Data.Array (singleton, (!!))
 import Data.DateTime.Locale (LocalValue(LocalValue))
 import Data.Either (Either(Left, Right), either)
 import Data.Enum (class BoundedEnum, fromEnum, toEnum)
@@ -42,7 +42,7 @@ foreign import logMe :: forall a. a -> a
 foreign import jsonParse :: String -> Foreign 
 foreign import pushEvent ::forall m. String -> Date ->  Unit
 foreign import getAllEvents :: forall eff. Date -> (Array String -> Eff eff Unit)-> Eff eff Unit
-foreign import getEventData :: forall eff. Int -> Int -> (Array String)
+foreign import getEventData :: forall eff. Int -> Int -> Int-> (Array String)
 main :: forall t179.
    Eff
      ( dom :: DOM
@@ -71,9 +71,9 @@ getNow = do
 wsConsumer :: forall eff. (Query ~> Aff (HA.HalogenEffects eff)) -> CR.Consumer String (Aff (HA.HalogenEffects eff)) Unit
 wsConsumer query = CR.consumer \msg -> do
         now <- getNow
-        pure $ pushEvent msg now 
-	msgs <- makeAff (\callback -> getAllEvents now  (Right >>> callback) *> pure nonCanceler ) 
-        query $ H.action $ WebHook msgs 
+        {-- pure $ pushEvent msg now --} 
+	{-- msgs <- makeAff (\callback -> getAllEvents now  (Right >>> callback) *> pure nonCanceler ) --} 
+        query $ H.action $ WebHook (singleton msg) 
         pure Nothing
 
 wsProducer :: forall eff. WS.WebSocket -> CR.Producer String (Aff (HA.HalogenEffects (dom :: DOM | eff))) Unit
@@ -121,26 +121,26 @@ toEnumL a = unsafePartial $  fromJust $  toEnum a
 data OMessage = 
 	OutputMessage String
 
-startOfMonth :: State -> Int
-startOfMonth state = fromEnum $ weekday $ canonicalDate (toEnumL state.yearSelected)  state.monthSelected (toEnumL 1) 
+startOfMonth :: Int -> Month  -> Int
+startOfMonth year month = fromEnum $ weekday $ canonicalDate (toEnumL year)  month (toEnumL 1) 
 
 tableView :: State -> H.ComponentHTML Query
 tableView state = 
       HH.table [HH.attr (AttrName "width") "100%"] 
-	 [HH.tbody_ $ map (makeRow (startOfMonth state )) [1,2,3,4,5,6]]
+	 [HH.tbody_ $ map (makeRow (startOfMonth state.yearSelected state.monthSelected )) [1,2,3,4,5,6]]
       where
 	    makeRow startDay index = 
 		  HH.tr [HH.attr (AttrName "height") "50" ]
                      [ HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 1 startDay state).value) )]
-		     [ HH.div [HP.class_ $ ClassName "Left_Text"] [HH.text (fromMaybe "" (if index == 1 then state.eventData !! 0 else Just "nope"))]
+									       [ HH.div [HP.class_ $ ClassName "Left_Text"] [HH.text (fromMaybe "" (if index == 1 then state.eventData !! 0 else state.eventData !! (1+7*index)))]
 		       ,HH.div [HP.class_ $ ClassName "Right_Text"] [ HH.text ((getText index 1 startDay state).value)]
-	               ] 
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 2 startDay state).value) )] [HH.text ((getText index 2 startDay state).value)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 3 startDay state).value) )] [HH.text ((getText index 3 startDay state).value)]
-		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 4 startDay state).value) )] [HH.text ((getText index 4 startDay state).value)]
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 5 startDay state).value) )] [HH.text (getText index 5 startDay state).value]
-		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 6 startDay state).value) )] [HH.text (getText index 6 startDay state).value]
-                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 7 startDay state).value) )] [HH.text (getText index 7 startDay state).value]
+	               ]   
+	              , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 2 startDay state).value) )] [HH.div [HP.class_ $ ClassName "Left_Text"][HH.text (fromMaybe "" (if index == 2 then state.eventData !! 1 else state.eventData !! (2+7*index)))], HH.div [HP.class_ $ ClassName "Right_Text"] [HH.text ((getText index 2 startDay state).value)]]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 3 startDay state).value) )] [HH.div [HP.class_ $ ClassName "Left_Text"][HH.text (fromMaybe "" (if index == 3 then state.eventData !! 2 else state.eventData !! (3+7*index)))], HH.div [HP.class_ $ ClassName "Right_Text"] [HH.text ((getText index 3 startDay state).value)]]
+		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 4 startDay state).value) )] [HH.div [HP.class_ $ ClassName "Left_Text"][HH.text (fromMaybe "" (if index == 4 then state.eventData !! 3 else state.eventData !! (4+7*index)))], HH.div [HP.class_ $ ClassName "Right_Text"] [HH.text ((getText index 4 startDay state).value)]]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 5 startDay state).value) )] [HH.div [HP.class_ $ ClassName "Left_Text"][HH.text (fromMaybe "" (if index == 5 then state.eventData !! 4 else state.eventData !! (5+7*index)))], HH.div [HP.class_ $ ClassName "Right_Text"] [HH.text (getText index 5 startDay state).value]]
+		     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 6 startDay state).value) )]  [HH.div [HP.class_ $ ClassName "Left_Text"][HH.text (fromMaybe "" (if index == 6 then state.eventData !! 5 else state.eventData !! (6+7*index)))], HH.div [HP.class_ $ ClassName "Right_Text"][HH.text (getText index 6 startDay state).value]]
+                     , HH.td [HH.attr (AttrName "width")"15%",HH.attr (AttrName "align") "right",HP.ref $ H.RefLabel ("DayStage" <> ((getText index 7 startDay state).value) )]  [HH.div [HP.class_ $ ClassName "Left_Text"][HH.text (fromMaybe "" (if index == 7 then state.eventData !! 6 else state.eventData !! (7+7*index)))], HH.div [HP.class_ $ ClassName "Right_Text"] [HH.text (getText index 7 startDay state).value]]
 		     ]
 
 type StrInt = { value :: String
@@ -203,7 +203,7 @@ component = H.component
 				 (let newMonth = if st.monthSelected == December then January else getNextMonth st.monthSelected 
 			              newYear = if newMonth == January then st.yearSelected +1 else st.yearSelected
 			              lastDay = fromEnum $ lastDayOfMonth (toEnumL newYear) newMonth
-				      eventData = getEventData newYear (fromEnum newMonth)
+				      eventData = getEventData newYear (startOfMonth newYear newMonth) (fromEnum newMonth)
 		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay, eventData = eventData}
 				 )
 			      )
@@ -213,7 +213,7 @@ component = H.component
 				 (let newMonth = if st.monthSelected == January then December else getPreviousMonth st.monthSelected 			              
 				      newYear = if newMonth == December then st.yearSelected -1 else st.yearSelected
 			              lastDay = fromEnum $ lastDayOfMonth (toEnumL newYear) newMonth
-	                              eventData = getEventData newYear (fromEnum newMonth)
+	                              eventData = getEventData newYear (startOfMonth newYear newMonth) (fromEnum newMonth)
 		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay, eventData = eventData}
 				 )
 			      )
@@ -223,4 +223,4 @@ component = H.component
 		     pure next
     		
 		initialStateData :: State
-  		initialStateData = { monthSelected: January, yearSelected: 2018, endDate:31, eventData : []}
+  		initialStateData = { monthSelected: January, yearSelected: 2018, endDate:31, eventData : getEventData 2018 (startOfMonth 2018 (toEnumL 1)) 1}

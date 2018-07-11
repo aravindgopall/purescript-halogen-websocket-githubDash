@@ -1,7 +1,7 @@
 // const {Client} = require("pg")
 // const client = new Client()
 
-client.connect()
+// client.connect()
 
 exports["logMe"]= function(val){ console.log(val); return val;}
 
@@ -22,9 +22,10 @@ exports["getAllEvents"] = function(date){
 }
 
 exports["getEventData"]= function(year){
-    return function(month){
-        return function(){
-            return [""];
+    return function(firstIndex){
+        return function(month){
+            var emptyArray = Array(firstIndex).fill(' ');
+            return emptyArray.concat([""]);
         }
     }
 }
