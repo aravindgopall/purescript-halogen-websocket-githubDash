@@ -1,14 +1,13 @@
 module Main where
 
-import Control.Monad.Eff.Now
-import Data.Array
+import Control.Monad.Eff.Now (NOW, nowDate)
+import Data.Array ((!!))
 import Data.Date
 import Data.Date.Component
 import Data.Foreign.Class
 import Prelude
 import WebSocket
 
-import Control.Coroutine (emit)
 import Control.Coroutine as CR
 import Control.Coroutine.Aff (produce)
 import Control.Coroutine.Aff as CRA
@@ -22,12 +21,11 @@ import Control.Monad.Eff.Var (($=))
 import Control.Monad.Except (runExcept)
 import DOM (DOM)
 import DOM.Event.EventTarget as EET
-import DOM.HTML.Indexed (CSSPixel)
 import DOM.Websocket.Event.EventTypes as WSET
 import DOM.Websocket.Event.MessageEvent as ME
 import DOM.Websocket.WebSocket as WS
-import Data.DateTime.Locale (LocalValue(..), Locale(..))
-import Data.Either (Either(..), either, fromRight)
+import Data.DateTime.Locale (LocalValue(LocalValue))
+import Data.Either (Either(Left, Right), either)
 import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Foldable (for_)
 import Data.Foreign (F, Foreign, readString, toForeign)
@@ -35,16 +33,16 @@ import Data.Maybe (Maybe(..), fromJust, fromMaybe)
 import Halogen as H
 import Halogen.Aff as HA
 import Halogen.HTML as HH
-import Halogen.HTML.Core (AttrName(..), ClassName(..), Prop(..))
+import Halogen.HTML.Core (AttrName(AttrName), ClassName(ClassName))
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.VDom.Driver (runUI)
 import Partial.Unsafe (unsafePartial)
-import Unsafe.Coerce (unsafeCoerce)
 foreign import logMe :: forall a. a -> a
 foreign import jsonParse :: String -> Foreign 
 foreign import pushEvent ::forall m. String -> Date ->  Unit
 foreign import getAllEvents :: forall eff. Date -> (Array String -> Eff eff Unit)-> Eff eff Unit
+foreign import getEventData :: forall eff. Int -> Int -> (Array String)
 main :: forall t179.
    Eff
      ( dom :: DOM
@@ -126,8 +124,6 @@ data OMessage =
 startOfMonth :: State -> Int
 startOfMonth state = fromEnum $ weekday $ canonicalDate (toEnumL state.yearSelected)  state.monthSelected (toEnumL 1) 
 
-{-- days --}
-
 tableView :: State -> H.ComponentHTML Query
 tableView state = 
       HH.table [HH.attr (AttrName "width") "100%"] 
@@ -207,7 +203,8 @@ component = H.component
 				 (let newMonth = if st.monthSelected == December then January else getNextMonth st.monthSelected 
 			              newYear = if newMonth == January then st.yearSelected +1 else st.yearSelected
 			              lastDay = fromEnum $ lastDayOfMonth (toEnumL newYear) newMonth
-		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay}
+				      eventData = getEventData newYear (fromEnum newMonth)
+		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay, eventData = eventData}
 				 )
 			      )
 		     pure next
@@ -216,7 +213,8 @@ component = H.component
 				 (let newMonth = if st.monthSelected == January then December else getPreviousMonth st.monthSelected 			              
 				      newYear = if newMonth == December then st.yearSelected -1 else st.yearSelected
 			              lastDay = fromEnum $ lastDayOfMonth (toEnumL newYear) newMonth
-		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay}
+	                              eventData = getEventData newYear (fromEnum newMonth)
+		                  in st {monthSelected = newMonth, yearSelected = newYear, endDate = lastDay, eventData = eventData}
 				 )
 			      )
 		     pure next

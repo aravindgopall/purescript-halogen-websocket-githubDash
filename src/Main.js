@@ -21,6 +21,15 @@ exports["getAllEvents"] = function(date){
     }
 }
 
+exports["getEventData"]= function(year){
+    return function(month){
+        return function(){
+            return [""];
+        }
+    }
+}
+
+
 function parse(json) {
     return json;
 }
