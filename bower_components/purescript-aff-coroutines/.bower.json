@@ -1,0 +1,31 @@
+{
+  "name": "purescript-aff-coroutines",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "node_modules",
+    "output",
+    "bower.json",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/purescript-contrib/purescript-aff-coroutines.git"
+  },
+  "dependencies": {
+    "purescript-aff": "^4.0.0",
+    "purescript-coroutines": "^4.0.0"
+  },
+  "homepage": "https://github.com/paf31/purescript-aff-coroutines",
+  "version": "6.0.0",
+  "_release": "6.0.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v6.0.0",
+    "commit": "c95ee8e988deb25eb01f38d41af09456d7d6516a"
+  },
+  "_source": "https://github.com/paf31/purescript-aff-coroutines.git",
+  "_target": "^6.0.0",
+  "_originalSource": "purescript-aff-coroutines"
+}

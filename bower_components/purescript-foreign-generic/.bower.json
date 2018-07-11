@@ -1,0 +1,44 @@
+{
+  "name": "purescript-foreign-generic",
+  "moduleType": [
+    "node"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/paf31/purescript-foreign-generic.git"
+  },
+  "dependencies": {
+    "purescript-console": "^3.0.0",
+    "purescript-eff": "^3.0.0",
+    "purescript-exceptions": "^3.0.0",
+    "purescript-foreign": "^4.0.0",
+    "purescript-generics-rep": "^5.0.0",
+    "purescript-globals": "^3.0.0",
+    "purescript-maps": "^3.0.0",
+    "purescript-nullable": "^3.0.0",
+    "purescript-proxy": "^2.0.0",
+    "purescript-symbols": "^3.0.0"
+  },
+  "devDependencies": {
+    "purescript-assert": "^3.0.0"
+  },
+  "homepage": "https://github.com/paf31/purescript-foreign-generic",
+  "version": "4.1.0",
+  "_release": "4.1.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v4.1.0",
+    "commit": "f43b4af4ab1163a6b1e59d9ee713aae8ff9699e6"
+  },
+  "_source": "https://github.com/paf31/purescript-foreign-generic.git",
+  "_target": "4.1.0",
+  "_originalSource": "purescript-foreign-generic",
+  "_direct": true
+}
