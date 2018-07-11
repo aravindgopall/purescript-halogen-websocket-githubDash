@@ -11,6 +11,7 @@ import Control.Coroutine.Aff (produce)
 import Control.Coroutine.Aff as CRA
 import Control.Monad.Aff (Aff, makeAff, nonCanceler)
 import Control.Monad.Aff.AVar (AVAR)
+import Control.Monad.Cont.Trans (lift)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION)
@@ -23,13 +24,17 @@ import DOM.Event.EventTarget as EET
 import DOM.Websocket.Event.EventTypes as WSET
 import DOM.Websocket.Event.MessageEvent as ME
 import DOM.Websocket.WebSocket as WS
-import Data.Array (singleton, (!!))
+import Data.Array (replicate, singleton, (!!))
+import Data.Array (unionBy)
 import Data.DateTime.Locale (LocalValue(LocalValue))
 import Data.Either (Either(Left, Right), either)
 import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Foldable (for_)
 import Data.Foreign (F, Foreign, readString, toForeign)
 import Data.Maybe (Maybe(..), fromJust, fromMaybe)
+import Database.Postgres (ClientConfig, ConnectionInfo, DB, connectionInfoFromConfig, defaultPoolConfig, end, execute_, mkPool, query, queryOne, withClient)
+import Database.Postgres as DP
+import Database.Postgres.SqlValue (toSql)
 import Halogen as H
 import Halogen.Aff as HA
 import Halogen.HTML as HH
@@ -38,6 +43,7 @@ import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.VDom.Driver (runUI)
 import Partial.Unsafe (unsafePartial)
+
 foreign import logMe :: forall a. a -> a
 foreign import jsonParse :: String -> Foreign 
 foreign import pushEvent ::forall m. String -> Date ->  Unit
@@ -52,6 +58,7 @@ main :: forall t179.
      , ref :: REF
      , ws :: WEBSOCKET
      , now :: NOW
+     , db :: DB
      | t179
      )
      Unit
@@ -70,9 +77,8 @@ getNow = do
 
 wsConsumer :: forall eff. (Query ~> Aff (HA.HalogenEffects eff)) -> CR.Consumer String (Aff (HA.HalogenEffects eff)) Unit
 wsConsumer query = CR.consumer \msg -> do
-        now <- getNow
-        {-- pure $ pushEvent msg now --} 
-	{-- msgs <- makeAff (\callback -> getAllEvents now  (Right >>> callback) *> pure nonCanceler ) --} 
+	insertDataPS 2018 1 ""
+        msgs <- getAllEventDataPS 2018 1 1 
         query $ H.action $ WebHook (singleton msg) 
         pure Nothing
 
@@ -219,8 +225,37 @@ component = H.component
 			      )
 		     pure next
 	        eval (WebHook msg next) = do
+		     _ <- H.liftAff $ insertDataPS 1995 1 "1"
 		     H.modify ( _ {eventData = msg }) 
 		     pure next
     		
 		initialStateData :: State
   		initialStateData = { monthSelected: January, yearSelected: 2018, endDate:31, eventData : getEventData 2018 (startOfMonth 2018 (toEnumL 1)) 1}
+
+clientConfig :: ClientConfig
+clientConfig =
+   { host : "localhost"
+   , database : "github"
+   , port : 5432
+   , user : "postgres"
+   , password : "admin"
+   , ssl : false
+   }
+
+connectionInfo :: ConnectionInfo
+connectionInfo = connectionInfoFromConfig clientConfig defaultPoolConfig
+
+getAllEventDataPS ::forall e. Int -> Int -> Int -> Aff (HA.HalogenEffects e) (Array String)
+getAllEventDataPS year start month= do
+   pool <- liftEff $ mkPool connectionInfo
+   events <- withClient pool \c -> do
+      queryOne (DP.Query "select * from eventData where year = $1 and month = $2" :: DP.Query (Array String)) [toSql year, toSql month] c
+   (pure $ end pool) *> pure $ unionBy (\_ _ -> false) (replicate (start-1) "") (fromMaybe [""] events) 
+
+insertDataPS :: forall e. Int -> Int -> String -> Aff (HA.HalogenEffects  e) Unit
+insertDataPS year month event = do
+   pool <- liftEff $ mkPool connectionInfo
+   withClient pool \c -> do
+      execute_ (DP.Query "insert into eventData values(year,month,event)") c
+      liftEff $ end pool
+
